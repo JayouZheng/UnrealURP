@@ -1,0 +1,265 @@
+// Copyright Jayou, Inc. All Rights Reserved.
+
+#include "/Engine/Private/Common.ush"
+
+#include "/Engine/Private/Nanite/NaniteDataDecode.ush"
+#include "/Engine/Private/Nanite/NaniteAttributeDecode.ush"
+
+#include "/Engine/Generated/Material.ush"
+#include "/Engine/Private/Nanite/NaniteVertexFactory.ush"
+
+Texture2D<UlongType> VisBuffer64;
+uint4 NaniteCPDMark;
+
+static FMaterialPixelParameters GMaterialPixelParameters;
+
+float4 GetOutRenderTarget0()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 0
+    return GetCustomMeshPassPSOutput0(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget1()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 1
+    return GetCustomMeshPassPSOutput1(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget2()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 2
+    return GetCustomMeshPassPSOutput2(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget3()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 3
+    return GetCustomMeshPassPSOutput3(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget4()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 4
+    return GetCustomMeshPassPSOutput4(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget5()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 5
+    return GetCustomMeshPassPSOutput5(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget6()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 6
+    return GetCustomMeshPassPSOutput6(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget7()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 7
+    return GetCustomMeshPassPSOutput7(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutDepthTarget()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 8
+    return GetCustomMeshPassPSOutput8(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+FMaterialPixelParameters GetMaterialPixelParameters(inout FVertexFactoryInterpolantsVSToPS Interpolants, UlongType PackedPixel, inout float4 SvPosition)
+{
+    const FNaniteView NaniteView = GetNaniteView(0);
+    
+    const uint2 PixelPos = SvPosition.xy - float2(0.5f, 0.5f);
+    const FBarycentrics Barycentrics = (FBarycentrics) 0; // Unused for shading pass (barycentrics are invalid here for full screen tile grid)
+    return FetchNaniteMaterialPixelParameters(NaniteView, PackedPixel, VIRTUAL_TEXTURE_TARGET, Barycentrics, true, uint3(0, 0, 0), true, Interpolants, SvPosition);
+}
+
+void MainPS(
+	in float4 SvPosition : SV_Position
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 0
+	, out float4 OutColor0 : SV_Target0
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 1
+    , out float4 OutColor1 : SV_Target1
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 2
+    , out float4 OutColor2 : SV_Target2
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 3
+    , out float4 OutColor3 : SV_Target3
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 4
+    , out float4 OutColor4 : SV_Target4
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 5
+    , out float4 OutColor5 : SV_Target5
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 6
+    , out float4 OutColor6 : SV_Target6
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 7
+    , out float4 OutColor7 : SV_Target7
+#endif
+#if PERMUTATION_OUTPUTDEPTHTARGET
+    , out float OutDepth : SV_Depth
+#endif
+    )
+{
+#if PERMUTATION_USEDEPTHSTENCILONLY
+    
+#if PERMUTATION_OUTPUTDEPTHTARGET
+    const uint2 PixelPos = (uint2)SvPosition.xy;
+
+	UlongType VisPixel  = VisBuffer64[PixelPos];
+
+	uint DepthInt = 0;
+	uint VisibleClusterIndex = 0;
+	uint TriIndex = 0;
+	UnpackVisPixel(VisPixel, DepthInt, VisibleClusterIndex, TriIndex);
+
+	const bool bIsNanitePixel = VisibleClusterIndex != 0xFFFFFFFF;
+	if (bIsNanitePixel)
+    {
+        OutDepth = asfloat(DepthInt);
+    
+        FVisibleCluster VisibleCluster = GetVisibleCluster(VisibleClusterIndex);
+		const FInstanceSceneData InstanceData = GetInstanceSceneData(VisibleCluster, false);
+        FPrimitiveSceneData PrimitiveData = GetPrimitiveData(InstanceData.PrimitiveId);
+        
+        int Index1 = NaniteCPDMark.x / 4;
+        int Index2 = NaniteCPDMark.x % 4;
+    
+        bool bIsCustomPassNanite = false;
+        if (uint(trunc(PrimitiveData.CustomPrimitiveData[Index1][Index2])) & NaniteCPDMark.y)
+        {
+            bIsCustomPassNanite = true;
+        }
+    
+        if (!bIsCustomPassNanite)
+        {
+            discard;
+        }
+    }
+    else
+    {
+        OutDepth = 0.0f;
+        discard;
+    }
+#endif // PERMUTATION_OUTPUTDEPTHTARGET
+    
+#else
+    
+    ResolvedView = ResolveView();
+    
+    const uint2 PixelPos = (uint2) SvPosition.xy;
+    
+    UlongType VisPixel = VisBuffer64[PixelPos];
+
+    uint DepthInt = 0;
+    uint VisibleClusterIndex = 0;
+    uint TriIndex = 0;
+    UnpackVisPixel(VisPixel, DepthInt, VisibleClusterIndex, TriIndex);
+
+    const bool bIsNanitePixel = VisibleClusterIndex != 0xFFFFFFFF;
+    FVisibleCluster VisibleCluster = GetVisibleCluster(VisibleClusterIndex);
+    const FInstanceSceneData InstanceData = GetInstanceSceneData(VisibleCluster, false);
+    FPrimitiveSceneData PrimitiveData = GetPrimitiveData(InstanceData.PrimitiveId);
+    
+    bool bIsCustomPassNanite = false;
+    
+    float4 CustomPrimitiveData = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float CPD = 0.0f;
+    
+    /////////////////////////////////////////////////////////////////////////////////////////
+    // Index to PrimitiveData.CustomPrimitiveData result RenderDoc Device Hung.
+    // Unroll to pick value.
+    [unroll]
+    for (int DataIndex = 0; DataIndex < NUM_CUSTOM_PRIMITIVE_DATA; ++DataIndex)
+    {
+        if (NaniteCPDMark.z == DataIndex)
+            CustomPrimitiveData = PrimitiveData.CustomPrimitiveData[DataIndex];
+    }
+    
+    [unroll]
+    for (int i = 0; i < 4; i++)
+    {
+        if (NaniteCPDMark.w == i)
+            CPD = CustomPrimitiveData[i];
+    }
+    
+    bIsCustomPassNanite = uint(trunc(CPD)) & NaniteCPDMark.y;
+
+    if (!bIsNanitePixel || !bIsCustomPassNanite)
+    {
+        discard;
+    } 
+    /////////////////////////////////////////////////////////////////////////////////////////
+    
+    FVertexFactoryInterpolantsVSToPS Interpolants = (FVertexFactoryInterpolantsVSToPS)0;
+    
+    GMaterialPixelParameters = GetMaterialPixelParameters(Interpolants, VisPixel, SvPosition);
+    FPixelMaterialInputs PixelMaterialInputs;
+    
+    float3 TranslatedWorldPosition = GMaterialPixelParameters.WorldPosition_CamRelative;
+    CalcMaterialParametersEx(GMaterialPixelParameters, PixelMaterialInputs, SvPosition, GMaterialPixelParameters.ScreenPosition, false, TranslatedWorldPosition, TranslatedWorldPosition);
+    
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 0
+    OutColor0 = GetOutRenderTarget0();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 1
+    OutColor1 = GetOutRenderTarget1();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 2
+    OutColor2 = GetOutRenderTarget2();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 3
+    OutColor3 = GetOutRenderTarget3();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 4
+    OutColor4 = GetOutRenderTarget4();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 5
+    OutColor5 = GetOutRenderTarget5();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 6
+    OutColor6 = GetOutRenderTarget6();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 7
+    OutColor7 = GetOutRenderTarget7();
+#endif
+    
+#if PERMUTATION_OUTPUTDEPTHTARGET
+    OutDepth = GetOutDepthTarget().r;
+#endif
+    
+#endif // PERMUTATION_USEDEPTHSTENCILONLY
+}

@@ -1,0 +1,29 @@
+// Copyright Jayou, Inc. All Rights Reserved.
+
+#include "/Engine/Private/Common.ush"
+
+static const float2 PlaneUV[6] =
+{
+    float2(0.0f, 1.0f),
+	float2(0.0f, 0.0f),
+	float2(1.0f, 0.0f),
+	float2(0.0f, 1.0f),
+	float2(1.0f, 0.0f),
+	float2(1.0f, 1.0f)
+};
+
+struct FVertexOut
+{
+    float4 PosH : SV_POSITION;
+    float2 TexC : TEXCOORD0;
+};
+
+void MainVS(
+	in uint VertexId : SV_VertexID,
+	out FVertexOut Output)
+{
+    Output.TexC = PlaneUV[VertexId];
+	
+	// Map [0,1]^2 to NDC space.
+    Output.PosH = float4(2.0f * Output.TexC.x - 1.0f, 1.0f - 2.0f * Output.TexC.y, 1.0f, 1.0f);
+}

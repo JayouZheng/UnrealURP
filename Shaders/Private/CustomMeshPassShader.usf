@@ -1,0 +1,557 @@
+// Copyright Jayou, Inc. All Rights Reserved.
+
+#include "/Engine/Private/Common.ush"
+
+struct FLocalVSToPS
+{
+    float4 PosH : SV_POSITION;
+    float4 Color : COLOR6;
+    float4 PosW : TEXCOORD16;
+    float4 NormalW : TEXCOORD17;
+    float4 TangentW : TEXCOORD18;
+    float4 TexC0 : TEXCOORD19;
+    float4 TexC1 : TEXCOORD20;
+    float4 CustomData0 : TEXCOORD21;
+    float4 CustomData1 : TEXCOORD22;
+};
+
+static FLocalVSToPS GLocalVSToPS;
+static bool GIsNanitePixel;
+
+#include "/Engine/Generated/Material.ush"
+#include "/Engine/Generated/VertexFactory.ush"
+
+struct FCustomMeshPassVSToPS
+{
+    FVertexFactoryInterpolantsVSToPS FactoryInterpolants;
+    FLocalVSToPS LocalVSToPS;
+};
+
+#if VERTEX_SHADER
+static FMaterialVertexParameters GMaterialVertexParameters;
+
+float4 GetHomogeneousPosition()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 0 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput0(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 0 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt10(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 0 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt20(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 0 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt30(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetVertexColor()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 1 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput1(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 1 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt11(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 1 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt21(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 1 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt31(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetWorldPosition()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 2 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput2(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 2 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt12(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 2 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt22(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 2 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt32(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetWorldNormal()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 3 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput3(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 3 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt13(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 3 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt23(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 3 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt33(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetWorldTangent()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 4 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput4(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 4 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt14(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 4 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt24(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 4 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt34(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetTextureCoordinate0()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 5 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput5(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 5 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt15(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 5 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt25(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 5 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt35(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetTextureCoordinate1()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 6 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput6(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 6 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt16(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 6 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt26(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 6 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt36(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetCustomOutput0()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 7 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput7(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 7 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt17(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 7 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt27(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 7 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt37(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetCustomOutput1()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 8 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput8(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 8 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt18(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 8 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt28(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 8 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt38(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetWorldPositionOffset()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUT > 9 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassVSOutput9(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT1 > 9 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassVSOutputExt19(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT2 > 9 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassVSOutputExt29(GMaterialVertexParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSVSOUTPUTEXT3 > 9 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassVSOutputExt39(GMaterialVertexParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+// VF_USE_PRIMITIVE_SCENE_DATA == 1
+FSceneDataIntermediates GetSceneDataIntermediatesEx(uint InstanceIdOffset, uint DrawInstanceId)
+{
+	FSceneDataIntermediates Intermediates = (FSceneDataIntermediates)0;
+
+	Intermediates.InstanceIdLoadIndex = InstanceIdOffset + DrawInstanceId;
+	Intermediates.InstanceId = CustomMeshPassSingleDrawUBO.InstanceSceneDataOffset + DrawInstanceId;
+	Intermediates.ViewIndex = 0;
+#if UE_VERSION > 529
+	Intermediates.InstanceData = GetInstanceSceneData(Intermediates.InstanceId, Scene.GPUScene.InstanceDataSOAStride);
+#else
+    Intermediates.InstanceData = GetInstanceSceneData(Intermediates.InstanceId, View.InstanceSceneDataSOAStride);
+#endif
+	Intermediates.PrimitiveId = Intermediates.InstanceData.PrimitiveId;
+	Intermediates.Primitive = GetPrimitiveData(Intermediates.PrimitiveId);
+
+	return Intermediates;
+}
+
+void MainVS(
+    //float4 InPosL : ATTRIBUTE0, // TODO: Support position only vertex stream.
+    FVertexFactoryInput Input,
+	out FCustomMeshPassVSToPS Output)
+{
+    ResolvedView = ResolveView();
+
+    FVertexFactoryIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
+    // Uncompressed LocalToWorld.
+    //FLWCMatrix LocalToWorld = MakeLWCMatrix4x3(CustomMeshPassSingleDrawUBO.TilePosition, CustomMeshPassSingleDrawUBO.LocalToRelativeWorld);
+
+    // Compressed LocalToWorld.
+	uint4  RotationScale = asuint(CustomMeshPassSingleDrawUBO.CompressedLocalToRelativeWorldRotation);
+	float3 Translation = CustomMeshPassSingleDrawUBO.CompressedLocalToRelativeWorldTranslation.xyz;
+	float3 Scale = 0;
+	float4x4 LocalToRelativeWorld = DecodeTransform(RotationScale, Translation, Scale);
+    FLWCMatrix LocalToWorld	= MakeLWCMatrix(CustomMeshPassSingleDrawUBO.TilePosition, LocalToRelativeWorld);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if GPUSKIN
+    float3 SkinnedPosition = SkinPosition(Input, VFIntermediates);
+    float4 TranslatedWorld = TransformLocalToTranslatedWorld(SkinnedPosition.xyz, LocalToWorld);
+#else
+    float4 TranslatedWorld = TransformLocalToTranslatedWorld(Input.Position.xyz, LocalToWorld);
+#endif
+
+#endif // 0
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Get LocalToWorld from SceneData.
+#if !USE_SPRITE_PARTICLE
+#if UE_VERSION > 529 && USE_LOCALVF
+    VFIntermediates.Common.SceneData = GetSceneDataIntermediatesEx(Input.InstanceIdOffset, Input.DrawInstanceId);
+#else
+    VFIntermediates.SceneData = GetSceneDataIntermediatesEx(Input.InstanceIdOffset, Input.DrawInstanceId);
+#endif
+#endif // !USE_SPRITE_PARTICLE
+#if GPUSKIN
+    VFIntermediates.LocalToWorld =  VFIntermediates.SceneData.InstanceData.LocalToWorld;
+#endif // GPUSKIN
+#if USE_MESH_PARTICLE
+    VFIntermediates.ParticleToWorld = VFIntermediates.SceneData.InstanceData.LocalToWorld;
+#endif // USE_MESH_PARTICLE
+    float4 TranslatedWorld = VertexFactoryGetWorldPosition(Input, VFIntermediates);
+    
+    float3x3 TangentToLocal = VertexFactoryGetTangentToLocal(Input, VFIntermediates);
+    GMaterialVertexParameters = GetMaterialVertexParameters(Input, VFIntermediates, TranslatedWorld.xyz, TangentToLocal);
+
+	// Isolate instructions used for world position offset
+	// As these cause the optimizer to generate different position calculating instructions in each pass, resulting in self-z-fighting.
+	// This is only necessary for shaders used in passes that have depth testing enabled.
+	{
+        // WPO for multipass.
+		//GMaterialVertexParameters.WorldPosition.xyz += GetMaterialWorldPositionOffset(GMaterialVertexParameters);
+        GMaterialVertexParameters.WorldPosition.xyz += GetWorldPositionOffset().xyz;
+	}
+    
+    Output.FactoryInterpolants = VertexFactoryGetInterpolantsVSToPS(Input, VFIntermediates, GMaterialVertexParameters);   
+
+    Output.LocalVSToPS.PosH = GetHomogeneousPosition();
+    Output.LocalVSToPS.Color = GetVertexColor();
+    Output.LocalVSToPS.PosW = GetWorldPosition();
+    Output.LocalVSToPS.NormalW = GetWorldNormal();
+    Output.LocalVSToPS.TangentW = GetWorldTangent();
+    Output.LocalVSToPS.TexC0 = GetTextureCoordinate0();
+    Output.LocalVSToPS.TexC1 = GetTextureCoordinate1();
+    Output.LocalVSToPS.CustomData0 = GetCustomOutput0();
+    Output.LocalVSToPS.CustomData1 = GetCustomOutput1();
+}
+#endif // VERTEX_SHADER
+
+#if PIXEL_SHADER
+
+static FMaterialPixelParameters GMaterialPixelParameters;
+
+void UnpackVisPixel(
+	UlongType Pixel,
+	out uint DepthInt,
+	out uint VisibleClusterIndex, 
+	out uint TriIndex
+	)
+{
+	const uint2 Unpacked = UnpackUlongType(Pixel);
+	VisibleClusterIndex = Unpacked.x >> 7;
+	TriIndex = Unpacked.x & 0x7F;
+	DepthInt = Unpacked.y;
+
+	VisibleClusterIndex--;
+}
+
+struct FVisibleCluster
+{
+	uint	Flags;
+	uint	ViewId;
+	uint	InstanceId;
+	uint	PageIndex;
+	uint	ClusterIndex;
+	uint2	vPage;
+	uint2	vPageEnd;		// Last page to render (inclusive). Only used during SW rasterization currently
+};
+
+#include "/Engine/Private/BitPacking.ush"
+#include "/Engine/Shared/NaniteDefinitions.h"
+
+FVisibleCluster UnpackVisibleCluster(uint4 RawData)
+{
+	uint BitPos = 0;
+	FVisibleCluster VisibleCluster;
+	VisibleCluster.Flags		= ReadBits( RawData, BitPos, NANITE_NUM_CULLING_FLAG_BITS );
+	VisibleCluster.ViewId		= ReadBits( RawData, BitPos, NANITE_MAX_VIEWS_PER_CULL_RASTERIZE_PASS_BITS );
+	VisibleCluster.PageIndex	= ReadBits( RawData, BitPos, NANITE_MAX_GPU_PAGES_BITS );
+	VisibleCluster.InstanceId	= ReadBits( RawData, BitPos, NANITE_MAX_INSTANCES_BITS );
+	VisibleCluster.ClusterIndex	= ReadBits( RawData, BitPos, NANITE_MAX_CLUSTERS_PER_PAGE_BITS );
+
+	VisibleCluster.vPage = 0;
+	return VisibleCluster;
+}
+
+FVisibleCluster GetVisibleCluster(ByteAddressBuffer VisibleClusters, uint ClusterIdx)
+{
+	uint4 RawData = uint4(VisibleClusters.Load2(ClusterIdx * 8), 0, 0);
+	return UnpackVisibleCluster(RawData);
+}
+
+float4 GetOutRenderTarget0()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 0 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput0(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 0 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt10(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 0 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt20(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 0 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt30(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget1()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 1 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput1(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 1 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt11(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 1 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt21(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 1 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt31(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget2()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 2 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput2(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 2 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt12(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 2 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt22(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 2 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt32(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget3()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 3 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput3(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 3 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt13(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 3 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt23(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 3 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt33(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget4()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 4 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput4(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 4 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt14(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 4 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt24(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 4 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt34(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget5()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 5 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput5(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 5 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt15(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 5 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt25(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 5 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt35(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget6()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 6 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput6(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 6 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt16(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 6 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt26(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 6 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt36(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutRenderTarget7()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 7 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput7(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 7 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt17(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 7 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt27(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 7 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt37(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+float4 GetOutDepthTarget()
+{
+#if NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUT > 8 && PERMUTATION_MULTIPASSFLAG == 0
+    return GetCustomMeshPassPSOutput8(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT1 > 8 && PERMUTATION_MULTIPASSFLAG == 1
+    return GetCustomMeshPassPSOutputExt18(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT2 > 8 && PERMUTATION_MULTIPASSFLAG == 2
+    return GetCustomMeshPassPSOutputExt28(GMaterialPixelParameters);
+#elif NUM_MATERIAL_OUTPUTS_GETCUSTOMMESHPASSPSOUTPUTEXT3 > 8 && PERMUTATION_MULTIPASSFLAG == 3
+    return GetCustomMeshPassPSOutputExt38(GMaterialPixelParameters);
+#else
+    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
+}
+
+void MainPS(
+    FCustomMeshPassVSToPS Input
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 0
+	, out float4 OutColor0 : SV_Target0
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 1
+    , out float4 OutColor1 : SV_Target1
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 2
+    , out float4 OutColor2 : SV_Target2
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 3
+    , out float4 OutColor3 : SV_Target3
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 4
+    , out float4 OutColor4 : SV_Target4
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 5
+    , out float4 OutColor5 : SV_Target5
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 6
+    , out float4 OutColor6 : SV_Target6
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 7
+    , out float4 OutColor7 : SV_Target7
+#endif
+#if PERMUTATION_OUTPUTDEPTHTARGET
+    , out float OutDepth : SV_Depth
+#endif
+    )
+{
+    ResolvedView = ResolveView();
+
+    GLocalVSToPS = Input.LocalVSToPS;
+
+#if PERMUTATION_ISNANITEFALLBACK
+    const uint2 PixelPos = (uint2)GLocalVSToPS.PosH.xy;
+	const UlongType VisPixel = CustomMeshPassUBO.VisBuffer64[PixelPos];
+
+	uint DepthInt = 0;
+	uint VisibleClusterIndex = 0;
+	uint TriIndex = 0;
+	UnpackVisPixel(VisPixel, DepthInt, VisibleClusterIndex, TriIndex);
+
+    GIsNanitePixel = VisibleClusterIndex != 0xFFFFFFFF;
+	if (GIsNanitePixel)
+	{
+        FVisibleCluster VisibleCluster = GetVisibleCluster(CustomMeshPassUBO.VisibleClustersSWHW, VisibleClusterIndex);
+		const FInstanceSceneData InstanceData = GetInstanceSceneData(VisibleCluster.InstanceId, CustomMeshPassUBO.PageConstants.x, false);
+        FPrimitiveSceneData PrimitiveData = GetPrimitiveData(InstanceData.PrimitiveId);
+                
+        if (PrimitiveData.PrimitiveComponentId == CustomMeshPassSingleDrawUBO.PrimitiveComponentId.x)
+        {
+            GLocalVSToPS.PosH.z = asfloat(DepthInt);
+        }
+	}
+#endif // PERMUTATION_ISNANITEFALLBACK
+
+    GMaterialPixelParameters = GetMaterialPixelParameters(Input.FactoryInterpolants, GLocalVSToPS.PosH);
+
+    FPixelMaterialInputs PixelMaterialInputs;
+    CalcMaterialParameters(GMaterialPixelParameters, PixelMaterialInputs, GLocalVSToPS.PosH, false);
+    
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 0
+    OutColor0 = GetOutRenderTarget0();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 1
+    OutColor1 = GetOutRenderTarget1();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 2
+    OutColor2 = GetOutRenderTarget2();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 3
+    OutColor3 = GetOutRenderTarget3();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 4
+    OutColor4 = GetOutRenderTarget4();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 5
+    OutColor5 = GetOutRenderTarget5();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 6
+    OutColor6 = GetOutRenderTarget6();
+#endif
+#if PERMUTATION_OUTPUTRENDERTARGETCOUNT > 7
+    OutColor7 = GetOutRenderTarget7();
+#endif
+#if PERMUTATION_OUTPUTDEPTHTARGET
+	OutDepth = GetOutDepthTarget().r;
+#endif // PERMUTATION_OUTPUTDEPTHTARGET
+
+}
+#endif // PIXEL_SHADER
