@@ -286,6 +286,14 @@ class FNaniteScreenQuadPS : public FMaterialShader
 	{
 		FMaterialShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
 
+#if UE_VERSION >= UE5_5_4
+		// Force shader model 6.0+
+		OutEnvironment.CompilerFlags.Add(CFLAG_ForceDXC);
+		OutEnvironment.CompilerFlags.Add(CFLAG_HLSL2021);
+		OutEnvironment.CompilerFlags.Add(CFLAG_ShaderBundle);
+		OutEnvironment.CompilerFlags.Add(CFLAG_RootConstants);
+#endif
+
 		OutEnvironment.SetDefine(TEXT("VF_SUPPORTS_PRIMITIVE_SCENE_DATA"), 1);
 		OutEnvironment.SetDefine(TEXT("NANITE_USE_UNIFORM_BUFFER"), 0);
 		OutEnvironment.SetDefine(TEXT("IS_NANITE_SHADING_PASS"), 0);
